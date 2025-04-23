@@ -8,8 +8,8 @@ metadata:
 spec:
   containers:
     - name: service
-      image: hydrokhoos/relay-service:test
-      imagePullPolicy: Always
+      image: hydrokhoos/relay-service:x86
+      imagePullPolicy: Never  # ← Minikube内のローカルイメージを使うために重要！
       tty: true
       volumeMounts:
         - mountPath: /share
@@ -24,8 +24,8 @@ spec:
         - name: SHARE_PATH
           value: /share/
     - name: sidecar
-      image: hydrokhoos/ndn-sidecar:test
-      imagePullPolicy: Always
+      image: ndn-sidecar:x86
+      imagePullPolicy: Never  # ← Minikube内のローカルイメージを使うために重要！
       tty: true
       ports:
         - containerPort: 6363
@@ -48,7 +48,7 @@ spec:
         - name: SHARE_PATH
           value: /share/
         - name: NDN_CLIENT_TRANSPORT
-          value: tcp4://ndn-node1
+          value: tcp4://10.244.0.53
         - name: ROUTER_PREFIX
           value: /ndn/jp/%C1.Router/node1
         - name: MY_SERVICE_NAME
