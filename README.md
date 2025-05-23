@@ -1,6 +1,8 @@
 # relayPod-ICSM
 
 ## Overview
+This is a modification of the content of https://github.com/hydrokhoos/relayPod-ICSM to allow experimentation in my environment. Here is the original:
+
 This repository provides a Kubernetes Pod designed for use within an Information-Centric Service Mesh (ICSM) using NDN.
 
 RelayPod simply passes through the received content and returns the content without any modification.
