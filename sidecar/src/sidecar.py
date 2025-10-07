@@ -36,7 +36,7 @@ SEGMENT_SIZE = 8000
 FRESHNESS_PERIOD = 5.000
 TMP_PATH = os.environ['SHARE_PATH']
 
-LOG_PATH = '/service.log'
+LOG_PATH = os.environ.get('SIDECAR_LOG_PATH', '/var/log/sidecar/service.log')
 with open(LOG_PATH, 'w'):
     pass
 
