@@ -74,9 +74,15 @@ ENV SIDECAR_LOG_PATH=/var/log/sidecar/service.log
 # Ensure log directory is writable
 RUN chmod 755 /var/log/sidecar
 
+# 起動スクリプトをコピーして実行可能にする
+#COPY ./start_sidecar.sh /start_sidecar.sh
+#RUN chmod +x /start_sidecar.sh
 
 # 🔧 デバッグ用に sidecar を起動せず、bash か sleep にする
 # CMD ["sleep", "3600"]
 
 #以下元コード
 CMD ["python3", "sidecar.py"]
+
+# 起動スクリプトを使用してNFDとsidecarを起動
+#CMD ["/start_sidecar.sh"]
