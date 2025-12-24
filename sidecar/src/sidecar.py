@@ -115,8 +115,12 @@ def on_interest(name: FormalName, param: InterestParam, _app_param: Optional[Bin
         print(f'<< I: {Name.to_str(trimmed_name)}')
         name_message = Name.to_str(trimmed_name)[1:].replace('/', '-')
         with open(os.path.join(TMP_PATH, name_message), 'wb') as f:
-            sp.run(['ndncatchunks', Name.to_str(
-                trimmed_name), '-qf'], stdout=f)
+            result = sp.run(['ndncatchunks', Name.to_str(
+                trimmed_name), '-qf'], stdout=f, stderr=sp.PIPE, timeout=10)
+            if result.returncode != 0:
+                error_msg = result.stderr.decode('utf-8', errors='ignore')
+                print(f'ERROR: ndncatchunks failed for {Name.to_str(trimmed_name)}: {error_msg}')
+                raise Exception(f'ndncatchunks failed with return code {result.returncode}')
         with open(os.path.join(TMP_PATH, name_message), 'r') as f:
             os.environ['IN_DATASIZE'] = str(len(f.read()))
 

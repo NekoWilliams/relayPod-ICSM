@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: ndn-service-pod1
+  name: ndn-service-pod2
   labels:
-    name: ndn-service-pod1
+    name: ndn-service-pod2
 spec:
   containers:
     - name: service
@@ -50,9 +50,9 @@ spec:
         - name: SHARE_PATH
           value: /share/
         - name: NDN_CLIENT_TRANSPORT
-          value: tcp4://ndn-node1
+          value: tcp4://ndn-node2
         - name: ROUTER_PREFIX
-          value: /ndn/jp/%C1.Router/node1
+          value: /ndn/jp/%C1.Router/node2
         - name: MY_SERVICE_NAME
           value: /relay
   volumes:
@@ -60,5 +60,6 @@ spec:
       emptyDir: {}
     - name: sidecar-logs
       hostPath:
-        path: /mnt/sidecar-logs-node1
+        path: /mnt/sidecar-logs-node2
         type: DirectoryOrCreate
+
