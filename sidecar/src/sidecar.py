@@ -102,25 +102,23 @@ def on_interest(name: FormalName, param: InterestParam, _app_param: Optional[Bin
         name_nosegver = name_nosegver[:-1]
         trimmed_name = name_nosegver[1:]
     else:
-        trimmed_name = name_noseg[1:]
+        trimmed_name = name_nosegver[1:]
 
     # get content
     holding_content = {'name': '', 'content': b'', 'time': 0.0}
     if not q.empty():
         holding_content = q.get()
-    if Name.to_str(name_nosegver) == holding_content['name'] and time.time() - holding_content['time'] <= FRESHNESS_PERIOD:
+    # キャッシュチェック（無効化）
+    # if Name.to_str(name_nosegver) == holding_content['name'] and time.time() - holding_content['time'] <= FRESHNESS_PERIOD:
+    if False:  # キャッシュを無効化
         processed_content = holding_content['content']
         q.put(holding_content)
     else:
         print(f'<< I: {Name.to_str(trimmed_name)}')
         name_message = Name.to_str(trimmed_name)[1:].replace('/', '-')
         with open(os.path.join(TMP_PATH, name_message), 'wb') as f:
-            result = sp.run(['ndncatchunks', Name.to_str(
-                trimmed_name), '-qf'], stdout=f, stderr=sp.PIPE, timeout=10)
-            if result.returncode != 0:
-                error_msg = result.stderr.decode('utf-8', errors='ignore')
-                print(f'ERROR: ndncatchunks failed for {Name.to_str(trimmed_name)}: {error_msg}')
-                raise Exception(f'ndncatchunks failed with return code {result.returncode}')
+            sp.run(['ndncatchunks', Name.to_str(
+                trimmed_name), '-qf'], stdout=f)
         with open(os.path.join(TMP_PATH, name_message), 'r') as f:
             os.environ['IN_DATASIZE'] = str(len(f.read()))
 
