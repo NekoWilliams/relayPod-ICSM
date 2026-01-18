@@ -16,6 +16,10 @@ DATA_VOLUME_PATH = os.environ['SHARE_PATH']
 
 # RELAY FUNCTION
 def function(data: bytes) -> bytes:
+    # 環境変数から処理時間を取得（デフォルト: 10ms）
+    processing_time_ms = float(os.environ.get('PROCESSING_TIME_MS', '10'))
+    processing_time = processing_time_ms / 1000.0  # ミリ秒を秒に変換
+    time.sleep(processing_time)
     return data
 
 

@@ -23,6 +23,8 @@ spec:
           value: "1234"
         - name: SHARE_PATH
           value: /share/
+        - name: PROCESSING_TIME_MS
+          value: "50"
     - name: sidecar
       image: ndn-sidecar:x86
       imagePullPolicy: Never  # ← Minikube内のローカルイメージを使うために重要！
