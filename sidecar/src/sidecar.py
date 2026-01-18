@@ -12,7 +12,6 @@ from queue import Queue
 import json
 
 from send_msg import call_service
-from queue import Queue
 
 
 os.environ['LOG_START_TIME'] = str(datetime.datetime.now())
@@ -31,10 +30,12 @@ advertise = sp.run(
 
 face_url = os.environ['NDN_CLIENT_TRANSPORT']
 
-q = Queue(maxsize=1)
 SEGMENT_SIZE = 8000
 FRESHNESS_PERIOD = 5.000
 TMP_PATH = os.environ['SHARE_PATH']
+
+# バージョン管理テーブル: {name_nosegver: {'version': timestamp, 'time': time.time()}}
+version_cache = {}
 
 LOG_PATH = os.environ.get('SIDECAR_LOG_PATH', '/var/log/sidecar/service.log')
 with open(LOG_PATH, 'w'):
@@ -104,44 +105,45 @@ def on_interest(name: FormalName, param: InterestParam, _app_param: Optional[Bin
     else:
         trimmed_name = name_nosegver[1:]
 
-    # get content
-    holding_content = {'name': '', 'content': b'', 'time': 0.0}
-    if not q.empty():
-        holding_content = q.get()
-    # キャッシュチェック（無効化）
-    # if Name.to_str(name_nosegver) == holding_content['name'] and time.time() - holding_content['time'] <= FRESHNESS_PERIOD:
-    if False:  # キャッシュを無効化
-        processed_content = holding_content['content']
-        q.put(holding_content)
+    # バージョン管理テーブルをチェック
+    name_nosegver_str = Name.to_str(name_nosegver)
+    
+    if name_nosegver_str in version_cache:
+        cached_version = version_cache[name_nosegver_str]
+        if time.time() - cached_version['time'] <= FRESHNESS_PERIOD:
+            # 同じバージョンを使用
+            timestamp = cached_version['version']
+        else:
+            # 新しいバージョンを生成
+            timestamp = int(time.time() * 1000)
+            version_cache[name_nosegver_str] = {'version': timestamp, 'time': time.time()}
     else:
-        print(f'<< I: {Name.to_str(trimmed_name)}')
-        name_message = Name.to_str(trimmed_name)[1:].replace('/', '-')
-        with open(os.path.join(TMP_PATH, name_message), 'wb') as f:
-            sp.run(['ndncatchunks', Name.to_str(
-                trimmed_name), '-qf'], stdout=f)
-        with open(os.path.join(TMP_PATH, name_message), 'r') as f:
-            os.environ['IN_DATASIZE'] = str(len(f.read()))
+        # 新しいバージョンを生成
+        timestamp = int(time.time() * 1000)
+        version_cache[name_nosegver_str] = {'version': timestamp, 'time': time.time()}
 
-        # service function
-        t0_service = time.time()
-        os.environ['LOG_SERVICE_CALL_IN_TIME'] = str(datetime.datetime.now())
-        processed_content = call_service(name_message)
-        dt_service = t0_service - time.time()
-        os.environ['LOG_SERVICE_CALL_OUT_TIME'] = str(datetime.datetime.now())
-        print('From Service, datasize: ', len(processed_content),
-              'service + socket time: ', dt_service)
-        holding_content = {
-            'name': Name.to_str(name_nosegver),
-            'content': processed_content,
-            'time': time.time()
-        }
-        q.put(holding_content)
+    # コンテンツ取得とサービスファンクション呼び出し（毎回実行）
+    print(f'<< I: {Name.to_str(trimmed_name)}')
+    name_message = Name.to_str(trimmed_name)[1:].replace('/', '-')
+    with open(os.path.join(TMP_PATH, name_message), 'wb') as f:
+        sp.run(['ndncatchunks', Name.to_str(
+            trimmed_name), '-qf'], stdout=f)
+    with open(os.path.join(TMP_PATH, name_message), 'r') as f:
+        os.environ['IN_DATASIZE'] = str(len(f.read()))
 
-        service_counter.put(service_counter.get() + 1)
+    # service function（毎回呼び出し）
+    t0_service = time.time()
+    os.environ['LOG_SERVICE_CALL_IN_TIME'] = str(datetime.datetime.now())
+    processed_content = call_service(name_message)
+    dt_service = t0_service - time.time()
+    os.environ['LOG_SERVICE_CALL_OUT_TIME'] = str(datetime.datetime.now())
+    print('From Service, datasize: ', len(processed_content),
+          'service + socket time: ', dt_service)
+
+    service_counter.put(service_counter.get() + 1)
 
     # put content
     seg_cnt = (len(processed_content) + SEGMENT_SIZE - 1) // SEGMENT_SIZE
-    timestamp = int(holding_content['time'] * 1000)
 
     if '/32=metadata' in Name.to_str(name) and seg_no < 1:
         # version discovery process
